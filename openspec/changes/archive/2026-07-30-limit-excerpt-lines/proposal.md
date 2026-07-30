@@ -1,21 +1,21 @@
 ## Why
 
-Специфікації `epl-news-landing` та `news-category-tabs` вимагають, щоб картка новини показувала "короткий опис (уривок)", але не визначають жодного обмеження довжини чи кількості рядків. Деякі RSS-джерела (наприклад Computerworld для Technology, SiliconANGLE для Artificial Intelligence) віддають у полі `description` практично повний текст статті. Через відсутність будь-якого обмеження картка розтягується на весь текст статті замість короткого уривку, що ламає верстку стрічки новин для всіх категорій.
+The `epl-news-landing` and `news-category-tabs` specs require the news card to show a "short description (excerpt)", but do not define any limit on length or number of lines. Some RSS sources (e.g. Computerworld for Technology, SiliconANGLE for Artificial Intelligence) return nearly the full article text in the `description` field. Because there is no limit, the card stretches to fit the entire article text instead of a short excerpt, breaking the news feed layout for all categories.
 
 ## What Changes
 
-- Уточнити вимоги "Вміст картки новини" (`epl-news-landing`) та "Вміст стрічки категорії" (`news-category-tabs`): уривок новини SHALL відображатися візуально обрізаним до 4 рядків тексту, незалежно від довжини вихідного опису з джерела.
-- Реалізувати обрізання уривку до 4 рядків у картці новини (`app/components/NewsCard.vue`) через CSS line-clamp, застосовне до всіх категорій (АПЛ і всі таби).
+- Clarify the "News card content" (`epl-news-landing`) and "Category feed content" (`news-category-tabs`) requirements: the news excerpt SHALL be visually truncated to 4 lines of text, regardless of the length of the original description from the source.
+- Implement excerpt truncation to 4 lines in the news card (`app/components/NewsCard.vue`) via CSS line-clamp, applicable to all categories (EPL and all tabs).
 
 ## Capabilities
 
 ### New Capabilities
-(немає)
+(none)
 
 ### Modified Capabilities
-- `epl-news-landing`: вимога "Вміст картки новини" доповнюється обмеженням відображення уривку до 4 рядків тексту.
-- `news-category-tabs`: вимога "Вміст стрічки категорії" доповнюється тим самим обмеженням для карток усіх категорій.
+- `epl-news-landing`: the "News card content" requirement is extended with a limit on excerpt display to 4 lines of text.
+- `news-category-tabs`: the "Category feed content" requirement is extended with the same limit for cards in all categories.
 
 ## Impact
 
-- `app/components/NewsCard.vue` — стилі `.news-card__excerpt` (CSS line-clamp на 4 рядки), спільні для АПЛ і всіх категорій, оскільки використовують один компонент картки.
+- `app/components/NewsCard.vue` — `.news-card__excerpt` styles (CSS line-clamp to 4 lines), shared across EPL and all categories since they use a single card component.

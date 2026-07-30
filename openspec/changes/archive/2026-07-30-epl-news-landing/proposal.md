@@ -1,23 +1,23 @@
 ## Why
 
-Уболівальники Англійської Прем'єр-ліги хочуть швидко переглянути останні новини без пошуку по кількох сайтах. Проста односторінкова посадкова сторінка з підбіркою 10 останніх новин закриває цю потребу мінімальними зусиллями.
+English Premier League fans want to quickly browse the latest news without searching across multiple sites. A simple single-page landing page with a curated list of the 10 latest news items addresses this need with minimal effort.
 
 ## What Changes
 
-- Нова посадкова сторінка, що відображає список 10 останніх новин про АПЛ (заголовок, короткий опис, дата публікації, посилання на джерело).
-- Отримання новин з зовнішнього джерела (новинний API або RSS-стрічка) під час завантаження сторінки.
-- Базовий адаптивний UI: заголовок сторінки, список/картки новин, стан завантаження та стан помилки (коли джерело недоступне).
+- A new landing page displaying a list of the 10 latest EPL news items (title, short description, publication date, link to source).
+- Fetching news from an external source (a news API or RSS feed) when the page loads.
+- Basic responsive UI: page heading, news list/cards, loading state, and error state (when the source is unavailable).
 
 ## Capabilities
 
 ### New Capabilities
-- `epl-news-landing`: Посадкова сторінка, яка отримує та відображає 10 останніх новин про Прем'єр-лігу Англії.
+- `epl-news-landing`: A landing page that fetches and displays the 10 latest English Premier League news items.
 
 ### Modified Capabilities
-<!-- немає існуючих capabilities для зміни -->
+<!-- no existing capabilities to modify -->
 
 ## Impact
 
-- Новий фронтенд-код: сторінка/компонент лендінгу, компонент картки новини, стилі.
-- Інтеграція із зовнішнім джерелом новин (API/RSS) — потрібен вибір конкретного провайдера на етапі design.
-- Немає впливу на існуючі системи, оскільки проєкт починається з нуля.
+- New frontend code: landing page/component, news card component, styles.
+- Integration with an external news source (API/RSS) — a specific provider needs to be chosen at the design stage.
+- No impact on existing systems, since the project starts from scratch.

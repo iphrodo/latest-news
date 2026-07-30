@@ -38,18 +38,18 @@ const activeStatus = computed(() => status.value[activeCategory.value] ?? 'idle'
 <template>
   <div class="page">
     <header class="page__header">
-      <h1>Останні новини</h1>
+      <h1>Latest News</h1>
     </header>
 
     <CategoryTabs :tabs="CATEGORY_TABS" :active-slug="activeCategory" @select="selectCategory" />
 
     <main>
       <template v-if="activeCategory === 'epl'">
-        <p v-if="eplPending" class="state state--loading">Завантаження новин...</p>
+        <p v-if="eplPending" class="state state--loading">Loading news...</p>
 
         <div v-else-if="eplError" class="state state--error">
-          <p>Не вдалося завантажити новини. Спробуйте ще раз.</p>
-          <button type="button" @click="refreshEpl()">Спробувати ще раз</button>
+          <p>Failed to load news. Please try again.</p>
+          <button type="button" @click="refreshEpl()">Try again</button>
         </div>
 
         <ul v-else class="news-list">
@@ -66,11 +66,11 @@ const activeStatus = computed(() => status.value[activeCategory.value] ?? 'idle'
       </template>
 
       <template v-else>
-        <p v-if="activeStatus === 'pending'" class="state state--loading">Завантаження новин...</p>
+        <p v-if="activeStatus === 'pending'" class="state state--loading">Loading news...</p>
 
         <div v-else-if="activeStatus === 'error'" class="state state--error">
-          <p>Не вдалося завантажити новини. Спробуйте ще раз.</p>
-          <button type="button" @click="loadCategory(activeCategory)">Спробувати ще раз</button>
+          <p>Failed to load news. Please try again.</p>
+          <button type="button" @click="loadCategory(activeCategory)">Try again</button>
         </div>
 
         <ul v-else class="news-list">

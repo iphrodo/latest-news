@@ -1,24 +1,24 @@
 ## MODIFIED Requirements
 
-### Requirement: Вміст картки новини
-Кожна новина на сторінці SHALL показувати заголовок, короткий опис (уривок), дату та час публікації, посилання на оригінальне джерело, а також зображення новини. Зображення SHALL відображатись зліва від картки, решта вмісту — справа. Якщо джерело новини не надає URL зображення, картка SHALL показувати заглушку (placeholder) на місці зображення замість того, щоб приховувати блок зображення. Уривок SHALL відображатися візуально обрізаним до 4 рядків тексту, незалежно від довжини опису, наданого джерелом новини.
+### Requirement: News card content
+Each news item on the page SHALL display a title, a short description (excerpt), the publication date and time, a link to the original source, and a news image. The image SHALL be displayed to the left of the card, with the rest of the content to the right. If the news source does not provide an image URL, the card SHALL show a placeholder in place of the image instead of hiding the image block. The excerpt SHALL be visually truncated to 4 lines of text, regardless of the length of the description provided by the news source.
 
-#### Scenario: Новина містить усі поля разом із зображенням
-- **WHEN** новина має заголовок, уривок, дату публікації, URL джерела та URL зображення
-- **THEN** система відображає зображення зліва в картці, а заголовок, уривок і дату/час публікації — справа від нього
+#### Scenario: News item contains all fields including an image
+- **WHEN** a news item has a title, excerpt, publication date, source URL, and image URL
+- **THEN** the system displays the image on the left of the card, with the title, excerpt, and publication date/time to its right
 
-#### Scenario: Новина без зображення
-- **WHEN** новина не має URL зображення
-- **THEN** система відображає картку із заглушкою (placeholder) на місці зображення зліва, а не приховує блок зображення
+#### Scenario: News item without an image
+- **WHEN** a news item has no image URL
+- **THEN** the system displays the card with a placeholder in place of the image on the left, rather than hiding the image block
 
-#### Scenario: Клік по новині відкриває джерело
-- **WHEN** відвідувач натискає на заголовок або картку новини
-- **THEN** система відкриває оригінальне джерело новини в новій вкладці
+#### Scenario: Clicking a news item opens the source
+- **WHEN** a visitor clicks the title or card of a news item
+- **THEN** the system opens the original news source in a new tab
 
-#### Scenario: Відображення часу публікації
-- **WHEN** новина має дату публікації з часовою міткою
-- **THEN** система показує дату разом із часом публікації (години та хвилини) на оригінальному сайті
+#### Scenario: Displaying publication time
+- **WHEN** a news item has a publication date with a timestamp
+- **THEN** the system shows the date along with the publication time (hours and minutes) on the original site
 
-#### Scenario: Опис новини довший за 4 рядки
-- **WHEN** опис новини, наданий джерелом, довший за 4 рядки тексту в картці
-- **THEN** система візуально обрізає уривок до 4 рядків, не розтягуючи картку на весь текст опису
+#### Scenario: News description longer than 4 lines
+- **WHEN** the news description provided by the source is longer than 4 lines of text in the card
+- **THEN** the system visually truncates the excerpt to 4 lines, without stretching the card to fit the entire description text

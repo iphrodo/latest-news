@@ -1,45 +1,45 @@
 ## Context
 
-Наразі `server/api/news.ts` жорстко зав'язаний на один RSS-фід (BBC Sport Football) і один фільтр ключових слів (`isEplNews`). `app/app.vue` робить один `useFetch` при завантаженні сторінки. Див. proposal.md - Why щодо мотивації.
+Currently `server/api/news.ts` is hard-wired to a single RSS feed (BBC Sport Football) and a single keyword filter (`isEplNews`). `app/app.vue` makes a single `useFetch` on page load. See proposal.md - Why for motivation.
 
 ## Goals / Non-Goals
 
 **Goals:**
-- Дати змогу додавати нові категорії новин декларативно (джерело RSS + необов'язкові ключові слова), не переписуючи API-шар щоразу.
-- Забезпечити достатню кількість релевантних новин на категорію (до 10), використовуючи спеціалізовані тематичні джерела замість фільтрації двох загальних фідів.
-- Гарантувати, що початкове завантаження сторінки не важче за поточне (жодних додаткових запитів, поки таб не відкрито).
-- Ізолювати стан (дані/завантаження/помилка) кожної категорії одна від одної.
+- Allow adding new news categories declaratively (RSS source + optional keywords) without rewriting the API layer each time.
+- Ensure enough relevant news per category (up to 10) by using specialized thematic sources instead of filtering two general feeds.
+- Guarantee the initial page load is no heavier than the current one (no additional requests until a tab is opened).
+- Isolate the state (data/loading/error) of each category from the others.
 
 **Non-Goals:**
-- Серверне/HTTP-кешування RSS-відповідей між користувачами чи between requests (окрема тема продуктивності, не входить у цю зміну).
-- Персистентність клієнтського кешу між перезавантаженнями сторінки (кеш живе лише в межах поточного SPA-сеансу).
-- Довільні користувацькі категорії — список категорій фіксований і заданий на сервері.
+- Server-side/HTTP caching of RSS responses across users or between requests (a separate performance topic, out of scope for this change).
+- Persisting the client cache across page reloads (the cache lives only within the current SPA session).
+- Arbitrary user-defined categories — the category list is fixed and defined server-side.
 
 ## Decisions
 
-- **Категорії як конфігурація, не окремі файли**: створити `server/utils/newsCategories.ts` з мапою `slug -> { label, feedUrl, keywords? }` для 8 нових категорій + `epl` (яка перевикористовує наявний `EPL_KEYWORDS`/`isEplNews`). Один динамічний ендпоінт `server/api/news/[category].get.ts` читає `slug`, знаходить конфігурацію, тягне відповідний RSS і фільтрує. Альтернатива (окремий файл-ендпоінт на категорію) відкинута — 9 майже ідентичних файлів important тільки збільшують дублювання.
-- **Спеціалізоване джерело на категорію замість фільтрації спільного фіда**: попередній підхід (2 спільні BBC-фіди + фільтр ключовими словами для 6 категорій) давав замало новин для вузьких тем. Натомість кожна категорія отримує власний тематичний RSS-фід:
-  - `technology` → TechCrunch (основний фід, без фільтра — вже тематичний)
-  - `finance` → MarketWatch Top Stories (без фільтра)
-  - `artificial-intelligence` → TechCrunch, категорія AI (без фільтра — джерело вже вузькотематичне)
-  - `gadgets` → Engadget (без фільтра)
-  - `digital-currencies` → CoinDesk (без фільтра)
-  - `playstation` → PlayStation Blog (без фільтра — офіційний блог, весь контент релевантний)
-  - `apple` → 9to5Mac (без фільтра)
-  - `it-jobs` → TechRepublic "IT Employment" (запасне джерело — TechCrunch тег `layoffs`, якщо основне недоступне); ключові слова (`layoffs`, `hiring`, `job cuts` тощо) залишаються як додатковий фільтр, бо навіть тематичний фід може містити нерелевантні статті.
-  - `epl` → без змін, BBC Football + `EPL_KEYWORDS`.
-- **Ключові слова — виняток, не правило**: на відміну від попереднього дизайну, `keywords` у конфігурації категорії тепер потрібні лише там, де джерело недостатньо вузьке саме по собі (`it-jobs`, `epl`). Для решти категорій `config.keywords` не задається, і `selectLatestNews` повертає фід без фільтрації.
-- **`rss.ts` параметризується URL-ом фіда**: `fetchNewsFeedXml(url: string)` замість жорстко зашитого `RSS_FEED_URL`.
-- **Парсер має стати толерантним до різних RSS-структур**: TechCrunch/MarketWatch/Engadget/CoinDesk/PlayStation Blog/9to5Mac/TechRepublic — усі валідні RSS 2.0, але відрізняються від BBC полями зображення (`media:content`, `enclosure`, `<image>` всередині `<item>` або відсутність зображення взагалі) та іноді описом (HTML-розмітка в `description`). `parseNewsFeedXml` потрібно узагальнити: пробувати послідовно відомі поля зображення й повертати новину без зображення, якщо жодне не знайдено, замість падіння з помилкою.
-- **Клієнтський кеш — простий `ref<Record<string, NewsItem[]>>` у `app.vue`** (або composable `useNewsCategory`), без зовнішньої бібліотеки кешування. Ключ — slug категорії. При кліку: якщо кеш має запис — показати миттєво без запиту; інакше виконати `$fetch('/api/news/' + slug)` і зберегти результат у кеш після успіху.
-- **Стан на таб, не глобальний**: `pending`/`error` зберігаються в `Record<string, 'idle'|'pending'|'error'>` окремо від кешу даних, щоб помилка одного таба не позначала інші як "завантажується".
-- **EPL залишається першим/дефолтним табом**: використовує вже завантажені при SSR дані (`useFetch` як зараз), решта — суто client-side lazy fetch. Це зберігає поточну поведінку EPL-стрічки (SSR, без миготіння).
-- **Заглушка для відсутнього зображення в картці**: `NewsCard.vue` — спільний компонент для EPL і всіх категорій, тому зміна поведінки для одного зачіпає всіх. Замість `v-if="imageUrl"` (повне приховування блоку зображення) компонент завжди рендерить блок зображення: реальний `<img>`, коли `imageUrl` задано, інакше статичну заглушку (просте SVG/CSS-зображення з нейтральною іконкою, без зовнішнього запиту). Це свідомо змінює поведінку `epl-news-landing` (сценарій "Новина без зображення") — тому ця зміна вносить `MODIFIED Requirement` у `specs/epl-news-landing/spec.md` цієї зміни.
+- **Categories as configuration, not separate files**: create `server/utils/newsCategories.ts` with a map of `slug -> { label, feedUrl, keywords? }` for the 8 new categories + `epl` (which reuses the existing `EPL_KEYWORDS`/`isEplNews`). A single dynamic endpoint `server/api/news/[category].get.ts` reads the `slug`, finds the configuration, fetches the corresponding RSS, and filters. The alternative (a separate endpoint file per category) was rejected — 9 nearly identical files would just increase duplication.
+- **A specialized source per category instead of filtering a shared feed**: the previous approach (2 shared BBC feeds + keyword filtering for 6 categories) yielded too little news for narrow topics. Instead, each category gets its own thematic RSS feed:
+  - `technology` → TechCrunch (main feed, no filter — already thematic)
+  - `finance` → MarketWatch Top Stories (no filter)
+  - `artificial-intelligence` → TechCrunch, AI category (no filter — the source is already narrowly thematic)
+  - `gadgets` → Engadget (no filter)
+  - `digital-currencies` → CoinDesk (no filter)
+  - `playstation` → PlayStation Blog (no filter — official blog, all content is relevant)
+  - `apple` → 9to5Mac (no filter)
+  - `it-jobs` → TechRepublic "IT Employment" (fallback source — TechCrunch `layoffs` tag, if the primary is unavailable); keywords (`layoffs`, `hiring`, `job cuts`, etc.) remain as an additional filter, since even a thematic feed can contain irrelevant articles.
+  - `epl` → unchanged, BBC Football + `EPL_KEYWORDS`.
+- **Keywords are the exception, not the rule**: unlike the previous design, `keywords` in a category's configuration are now only needed where the source isn't narrow enough on its own (`it-jobs`, `epl`). For the other categories, `config.keywords` is not set, and `selectLatestNews` returns the feed without filtering.
+- **`rss.ts` becomes parameterized by feed URL**: `fetchNewsFeedXml(url: string)` instead of the hardcoded `RSS_FEED_URL`.
+- **The parser needs to become tolerant of different RSS structures**: TechCrunch/MarketWatch/Engadget/CoinDesk/PlayStation Blog/9to5Mac/TechRepublic are all valid RSS 2.0, but differ from BBC in their image fields (`media:content`, `enclosure`, an `<image>` inside `<item>`, or no image at all) and sometimes in the description (HTML markup in `description`). `parseNewsFeedXml` needs to be generalized: try known image fields in sequence and return the news item without an image if none is found, instead of failing with an error.
+- **Client-side cache — a simple `ref<Record<string, NewsItem[]>>` in `app.vue`** (or a `useNewsCategory` composable), without an external caching library. The key is the category slug. On click: if the cache has an entry — show it instantly without a request; otherwise perform `$fetch('/api/news/' + slug)` and store the result in the cache after success.
+- **State per tab, not global**: `pending`/`error` are stored in a `Record<string, 'idle'|'pending'|'error'>` separate from the data cache, so an error in one tab doesn't mark others as "loading".
+- **EPL remains the first/default tab**: it uses data already loaded during SSR (`useFetch` as now), the rest are purely client-side lazy fetches. This preserves the current behavior of the EPL feed (SSR, no flicker).
+- **Placeholder for a missing image in the card**: `NewsCard.vue` is a shared component for EPL and all categories, so changing behavior for one affects all. Instead of `v-if="imageUrl"` (fully hiding the image block), the component always renders the image block: a real `<img>` when `imageUrl` is set, otherwise a static placeholder (a simple SVG/CSS image with a neutral icon, no external request). This deliberately changes the behavior of `epl-news-landing` (scenario "News item without an image") — so this change introduces a `MODIFIED Requirement` in this change's `specs/epl-news-landing/spec.md`.
 
 ## Risks / Trade-offs
 
-- [Кожне нове джерело (TechCrunch, MarketWatch, Engadget, CoinDesk, PlayStation Blog, 9to5Mac, TechRepublic) — окремий зовнішній хост зі своєю доступністю/швидкістю відповіді] → Обробка помилки джерела як 502 вже є на рівень ендпоінта (без змін); падіння одного джерела не впливає на інші категорії, бо кожен таб незалежний.
-- [Структура RSS відрізняється між джерелами (зображення/опис), парсер може не витягнути частину полів для нових фідів] → Парсер узагальнюється, щоб толерантно обробляти відсутні поля (новина без зображення — не помилка); перевіряється вручну для кожного нового фіда при реалізації (див. tasks.md).
-- [TechRepublic-фід для IT Jobs може бути нестабільним або мало релевантним] → Запасне джерело (TechCrunch тег `layoffs`) + збережений keyword-фільтр як другий рівень захисту від нерелевантного контенту.
-- [Розширення набору категорій у майбутньому вимагає редагування серверного файлу конфігурації] → Свідомий компроміс: конфігурація на сервері, не user-facing налаштування — поза межами цієї зміни.
-- [Клієнтський кеш втрачається при `F5`] → Очікувана поведінка (Non-Goal: persist between reloads), користувач лише повторно клікає таб.
+- [Each new source (TechCrunch, MarketWatch, Engadget, CoinDesk, PlayStation Blog, 9to5Mac, TechRepublic) is a separate external host with its own availability/response speed] → Source error handling as a 502 already exists at the endpoint level (unchanged); one source failing doesn't affect other categories, since each tab is independent.
+- [RSS structure differs between sources (image/description), the parser may fail to extract some fields for new feeds] → The parser is generalized to tolerantly handle missing fields (a news item without an image is not an error); manually verified for each new feed during implementation (see tasks.md).
+- [The TechRepublic feed for IT Jobs may be unstable or of low relevance] → Fallback source (TechCrunch `layoffs` tag) + the retained keyword filter as a second layer of protection against irrelevant content.
+- [Expanding the set of categories in the future requires editing the server configuration file] → A deliberate trade-off: configuration lives server-side, not as a user-facing setting — out of scope for this change.
+- [The client cache is lost on `F5`] → Expected behavior (Non-Goal: persist between reloads), the user just clicks the tab again.

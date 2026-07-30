@@ -2,61 +2,61 @@
 
 ## Purpose
 
-Дозволяє відвідувачу перемикатися між тематичними категоріями новин через таби та переглядати до 10 останніх новин обраної категорії без перезавантаження сторінки.
+Allows a visitor to switch between thematic news categories via tabs and browse up to 10 latest news items of the selected category without reloading the page.
 
 ## Requirements
 
-### Requirement: Панель табів категорій
-Система SHALL показувати панель табів з наступними категоріями новин: Artificial Intelligence, Technology, Finance, Gadgets, Digital Currencies, Playstation, Apple, IT Jobs, а також таб з наявною стрічкою новин АПЛ.
+### Requirement: Category tabs panel
+The system SHALL show a tab panel with the following news categories: Artificial Intelligence, Technology, Finance, Gadgets, Digital Currencies, Playstation, Apple, IT Jobs, as well as a tab with the existing EPL news feed.
 
-#### Scenario: Відображення табів
-- **WHEN** відвідувач відкриває сторінку
-- **THEN** система показує панель з усіма табами категорій, і один з них позначений як активний
+#### Scenario: Displaying tabs
+- **WHEN** a visitor opens the page
+- **THEN** the system shows a panel with all category tabs, and one of them is marked as active
 
-### Requirement: Ледаче завантаження новин категорії
-Новини для категорії SHALL завантажуватися лише після першого кліку відвідувача на відповідний таб, без перезавантаження сторінки.
+### Requirement: Lazy loading of category news
+News for a category SHALL be loaded only after the visitor's first click on the corresponding tab, without reloading the page.
 
-#### Scenario: Перший клік на таб категорії
-- **WHEN** відвідувач вперше клікає на таб категорії, новини якої ще не завантажені
-- **THEN** система виконує клієнтський запит за новинами цієї категорії, не перезавантажуючи сторінку
+#### Scenario: First click on a category tab
+- **WHEN** a visitor clicks a category tab for the first time, and that category's news has not yet been loaded
+- **THEN** the system performs a client-side request for that category's news, without reloading the page
 
-#### Scenario: Новини категорії не завантажуються заздалегідь
-- **WHEN** відвідувач відкриває сторінку і ще не клікав на таб категорії
-- **THEN** система не виконує запит за новинами цієї категорії, поки таб не буде відкрито
+#### Scenario: Category news is not preloaded
+- **WHEN** a visitor opens the page and has not yet clicked a category tab
+- **THEN** the system does not request that category's news until the tab is opened
 
-### Requirement: Вміст стрічки категорії
-Кожна категорія SHALL показувати до 10 найновіших новин, відсортованих від найновішої до найстарішої, у тому ж форматі картки, що й стрічка АПЛ (заголовок, уривок, зображення зліва, дата й час публікації, посилання на джерело). Уривок SHALL відображатися візуально обрізаним до 4 рядків тексту, незалежно від довжини опису, наданого джерелом новини цієї категорії.
+### Requirement: Category feed content
+Each category SHALL show up to 10 of the newest news items, sorted from newest to oldest, in the same card format as the EPL feed (title, excerpt, image on the left, publication date and time, link to source). The excerpt SHALL be visually truncated to 4 lines of text, regardless of the length of the description provided by that category's news source.
 
-#### Scenario: Категорія повертає 10 або більше новин
-- **WHEN** джерело новин повертає 10 або більше новин, що відповідають темі категорії
-- **THEN** система показує рівно 10 найновіших новин цієї категорії
+#### Scenario: Category returns 10 or more news items
+- **WHEN** the news source returns 10 or more news items matching the category's topic
+- **THEN** the system shows exactly 10 of the newest news items for that category
 
-#### Scenario: Категорія повертає менше 10 новин
-- **WHEN** джерело новин повертає менше 10 новин, що відповідають темі категорії
-- **THEN** система показує всі доступні новини цієї категорії без помилки та без порожніх заповнювачів (заповнювачів картками, не заглушкою зображення)
+#### Scenario: Category returns fewer than 10 news items
+- **WHEN** the news source returns fewer than 10 news items matching the category's topic
+- **THEN** the system shows all available news items for that category without error and without empty placeholders (card placeholders, not image placeholders)
 
-#### Scenario: Новина категорії без зображення в джерелі
-- **WHEN** новина категорії не має URL зображення, наданого джерелом
-- **THEN** система показує заглушку (placeholder) на місці зображення зліва в картці, а не приховує блок зображення
+#### Scenario: Category news item without an image in the source
+- **WHEN** a category news item has no image URL provided by the source
+- **THEN** the system shows a placeholder in place of the image on the left of the card, rather than hiding the image block
 
-#### Scenario: Опис новини категорії довший за 4 рядки
-- **WHEN** опис новини категорії, наданий джерелом, довший за 4 рядки тексту в картці
-- **THEN** система візуально обрізає уривок до 4 рядків, не розтягуючи картку на весь текст опису
+#### Scenario: Category news description longer than 4 lines
+- **WHEN** the description of a category news item provided by the source is longer than 4 lines of text in the card
+- **THEN** the system visually truncates the excerpt to 4 lines, without stretching the card to fit the entire description text
 
-### Requirement: Клієнтське кешування завантажених категорій
-Система SHALL кешувати на клієнті новини вже відкритої категорії в межах поточного завантаження сторінки та повторно використовувати їх при повторному перемиканні на цей таб без нового запиту до сервера.
+### Requirement: Client-side caching of loaded categories
+The system SHALL cache on the client the news of an already opened category for the duration of the current page load, and reuse it when switching back to that tab without a new request to the server.
 
-#### Scenario: Повторний клік на вже відкритий таб
-- **WHEN** відвідувач клікає на таб категорії, новини якої вже були завантажені раніше в цьому сеансі перегляду сторінки
-- **THEN** система показує раніше завантажені новини без повторного запиту до сервера
+#### Scenario: Repeated click on an already opened tab
+- **WHEN** a visitor clicks a category tab whose news has already been loaded earlier in this page viewing session
+- **THEN** the system shows the previously loaded news without a new request to the server
 
-### Requirement: Незалежні стани завантаження та помилки для табів
-Кожен таб категорії SHALL мати власний стан завантаження та стан помилки, які не впливають на вміст або стан інших табів.
+### Requirement: Independent loading and error states per tab
+Each category tab SHALL have its own loading state and error state, which do not affect the content or state of other tabs.
 
-#### Scenario: Дані категорії ще завантажуються
-- **WHEN** відвідувач відкрив таб категорії і запит новин для неї ще виконується
-- **THEN** система показує індикатор завантаження в межах цього таба, тоді як раніше завантажені таби залишаються незмінними
+#### Scenario: Category data is still loading
+- **WHEN** a visitor has opened a category tab and the news request for it is still in progress
+- **THEN** the system shows a loading indicator within that tab, while previously loaded tabs remain unchanged
 
-#### Scenario: Джерело новин для категорії недоступне
-- **WHEN** запит новин для відкритої категорії завершується помилкою або тайм-аутом
-- **THEN** система показує повідомлення про помилку з можливістю повторити спробу в межах цього таба, не впливаючи на інші таби
+#### Scenario: News source for the category is unavailable
+- **WHEN** the news request for the opened category fails or times out
+- **THEN** the system shows an error message with the option to retry within that tab, without affecting other tabs
