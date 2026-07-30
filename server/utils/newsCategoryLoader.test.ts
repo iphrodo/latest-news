@@ -6,7 +6,12 @@ const { fetchNewsFeedXml, parseNewsFeedXml } = vi.hoisted(() => ({
   parseNewsFeedXml: vi.fn(),
 }))
 
+const { fetchArticleImageUrl } = vi.hoisted(() => ({
+  fetchArticleImageUrl: vi.fn(),
+}))
+
 vi.mock('./rss', () => ({ fetchNewsFeedXml, parseNewsFeedXml }))
+vi.mock('./articleImage', () => ({ fetchArticleImageUrl }))
 
 const { loadCategoryNews } = await import('./newsCategoryLoader')
 
@@ -25,6 +30,7 @@ describe('loadCategoryNews', () => {
   beforeEach(() => {
     fetchNewsFeedXml.mockReset()
     parseNewsFeedXml.mockReset()
+    fetchArticleImageUrl.mockReset()
   })
 
   it('falls back to the fallback feed when the primary feed has no matching keywords', async () => {
@@ -100,5 +106,32 @@ describe('loadCategoryNews', () => {
         fallbackFeedUrl: 'https://fallback.example/feed',
       }),
     ).rejects.toThrow('Failed to load IT Jobs news feed')
+  })
+
+  it('fills in imageUrl for items missing an image from the feed, leaving feed-provided images untouched', async () => {
+    fetchNewsFeedXml.mockResolvedValue('<rss></rss>')
+    parseNewsFeedXml.mockReturnValue([
+      newsItem({ title: 'No image', link: 'https://example.com/no-image', imageUrl: null }),
+      newsItem({
+        title: 'Has image',
+        link: 'https://example.com/has-image',
+        imageUrl: 'https://example.com/feed-image.jpg',
+      }),
+    ])
+    fetchArticleImageUrl.mockResolvedValue('https://example.com/article-image.jpg')
+
+    const news = await loadCategoryNews({
+      label: 'Technology',
+      feedUrl: 'https://primary.example/feed',
+    })
+
+    expect(fetchArticleImageUrl).toHaveBeenCalledTimes(1)
+    expect(fetchArticleImageUrl).toHaveBeenCalledWith('https://example.com/no-image')
+    expect(news.find((item) => item.link === 'https://example.com/no-image')?.imageUrl).toBe(
+      'https://example.com/article-image.jpg',
+    )
+    expect(news.find((item) => item.link === 'https://example.com/has-image')?.imageUrl).toBe(
+      'https://example.com/feed-image.jpg',
+    )
   })
 })
