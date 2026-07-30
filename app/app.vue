@@ -11,6 +11,7 @@ interface NewsItem {
 
 const CATEGORY_TABS: CategoryTab[] = [
   { slug: 'epl', label: 'European Football' },
+  { slug: 'football-transfers', label: 'Transfers & Rumours' },
   { slug: 'artificial-intelligence', label: 'Artificial Intelligence' },
   { slug: 'technology', label: 'Technology' },
   { slug: 'finance', label: 'Finance' },

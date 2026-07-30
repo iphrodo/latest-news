@@ -55,6 +55,26 @@ export function isEuropeanFootballNews(item: RawNewsItem): boolean {
   return matchesKeywords(item, EUROPEAN_FOOTBALL_KEYWORDS)
 }
 
+export const FOOTBALL_TRANSFER_KEYWORDS = [
+  'transfer',
+  'transfers',
+  'signing',
+  'sign for',
+  'signs for',
+  'deal',
+  'loan',
+  'loan move',
+  'rumors',
+  'rumours',
+  'sources:',
+  'linked with',
+  'medical',
+  'bid for',
+  'move to',
+  'agree deal',
+  'agreed a deal',
+]
+
 function matchesKeywords(item: RawNewsItem, keywords: string[]): boolean {
   const haystack = `${item.title} ${item.excerpt}`.toLowerCase()
   return keywords.some((keyword) => haystack.includes(keyword))

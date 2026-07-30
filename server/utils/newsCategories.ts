@@ -1,4 +1,4 @@
-import { EUROPEAN_FOOTBALL_KEYWORDS } from './newsFilter'
+import { EUROPEAN_FOOTBALL_KEYWORDS, FOOTBALL_TRANSFER_KEYWORDS } from './newsFilter'
 
 export interface NewsCategoryConfig {
   label: string
@@ -17,6 +17,7 @@ const COINDESK_FEED_URL = 'https://www.coindesk.com/arc/outboundfeeds/rss/'
 const PLAYSTATION_BLOG_FEED_URL = 'https://blog.playstation.com/feed/'
 const NINE_TO_FIVE_MAC_FEED_URL = 'https://9to5mac.com/feed/'
 const TECHREPUBLIC_IT_EMPLOYMENT_FEED_URL = 'https://www.techrepublic.com/rssfeeds/topic/it-employment/'
+const ESPN_SOCCER_FEED_URL = 'https://www.espn.com/espn/rss/soccer/news'
 
 export const NEWS_CATEGORIES: Record<string, NewsCategoryConfig> = {
   epl: {
@@ -57,5 +58,10 @@ export const NEWS_CATEGORIES: Record<string, NewsCategoryConfig> = {
     feedUrl: TECHREPUBLIC_IT_EMPLOYMENT_FEED_URL,
     fallbackFeedUrl: TECHCRUNCH_LAYOFFS_FEED_URL,
     keywords: ['tech jobs', 'layoffs', 'hiring', 'job cuts', 'redundancies', 'tech workers', 'it employment'],
+  },
+  'football-transfers': {
+    label: 'Transfers & Rumours',
+    feedUrl: ESPN_SOCCER_FEED_URL,
+    keywords: FOOTBALL_TRANSFER_KEYWORDS,
   },
 }
