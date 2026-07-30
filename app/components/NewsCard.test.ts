@@ -1,0 +1,34 @@
+import { mount } from '@vue/test-utils'
+import { describe, expect, it } from 'vitest'
+import NewsCard from './NewsCard.vue'
+
+const baseProps = {
+  title: 'Example headline',
+  excerpt: 'Example excerpt',
+  publishedAt: '2026-07-30T12:00:00Z',
+  link: 'https://example.com/article',
+}
+
+describe('NewsCard', () => {
+  it('renders the real image when imageUrl is provided', () => {
+    const wrapper = mount(NewsCard, {
+      props: { ...baseProps, imageUrl: 'https://example.com/image.jpg' },
+    })
+
+    const img = wrapper.find('img.news-card__image')
+    expect(img.exists()).toBe(true)
+    expect(img.attributes('src')).toBe('https://example.com/image.jpg')
+    expect(wrapper.find('[data-testid="news-card-image-placeholder"]').exists()).toBe(false)
+  })
+
+  it('renders a placeholder instead of an empty block when imageUrl is null', () => {
+    const wrapper = mount(NewsCard, {
+      props: { ...baseProps, imageUrl: null },
+    })
+
+    expect(wrapper.find('img.news-card__image').exists()).toBe(false)
+    const placeholder = wrapper.find('[data-testid="news-card-image-placeholder"]')
+    expect(placeholder.exists()).toBe(true)
+    expect(placeholder.find('svg').exists()).toBe(true)
+  })
+})
