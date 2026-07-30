@@ -104,3 +104,33 @@ describe('parseNewsFeedXml entity decoding', () => {
     expect(item?.excerpt).toBe("Hello! I’m back for the last time (…maybe) to share what’s next.")
   })
 })
+
+describe('parseNewsFeedXml publication date normalization', () => {
+  it('normalizes a BST pubDate into a timestamp the Date constructor can parse', () => {
+    const xml = wrapItem(`
+      <title>Title</title>
+      <description>Excerpt</description>
+      <link>https://example.com/a</link>
+      <pubDate>Thu, 30 Jul 2026 16:15:00 BST</pubDate>
+    `)
+
+    const [item] = parseNewsFeedXml(xml)
+    const parsed = new Date(item?.publishedAt ?? '')
+    expect(Number.isNaN(parsed.getTime())).toBe(false)
+    expect(parsed.toISOString()).toBe('2026-07-30T15:15:00.000Z')
+  })
+
+  it('leaves an already-standard GMT pubDate parseable and unchanged in meaning', () => {
+    const xml = wrapItem(`
+      <title>Title</title>
+      <description>Excerpt</description>
+      <link>https://example.com/a</link>
+      <pubDate>Thu, 30 Jul 2026 16:15:00 GMT</pubDate>
+    `)
+
+    const [item] = parseNewsFeedXml(xml)
+    const parsed = new Date(item?.publishedAt ?? '')
+    expect(Number.isNaN(parsed.getTime())).toBe(false)
+    expect(parsed.toISOString()).toBe('2026-07-30T16:15:00.000Z')
+  })
+})

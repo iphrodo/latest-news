@@ -45,6 +45,22 @@ function decodeEntities(value: string): string {
   })
 }
 
+// JS's Date parser only recognizes a handful of timezone abbreviations (GMT, UTC,
+// and US zones like EST); UK feeds emitting "BST" (British Summer Time) produce an
+// Invalid Date, which breaks both sorting and date display downstream.
+const TIMEZONE_OFFSETS: Record<string, string> = {
+  GMT: '+0000',
+  UTC: '+0000',
+  BST: '+0100',
+}
+
+function normalizePubDate(value: string): string {
+  const match = value.match(/ ([A-Z]{2,5})$/)
+  const offset = match ? TIMEZONE_OFFSETS[match[1]] : undefined
+  if (!match || !offset) return value
+  return `${value.slice(0, match.index)} ${offset}`
+}
+
 export async function fetchNewsFeedXml(feedUrl: string): Promise<string> {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
@@ -116,7 +132,7 @@ export function parseNewsFeedXml(xml: string): RawNewsItem[] {
   return list.map((item) => ({
     title: decodeEntities(stripHtml(String(item.title ?? ''))),
     excerpt: decodeEntities(stripHtml(String(item.description ?? ''))),
-    publishedAt: String(item.pubDate ?? ''),
+    publishedAt: normalizePubDate(String(item.pubDate ?? '')),
     link: String(item.link ?? ''),
     imageUrl: extractImageUrl(item),
   }))

@@ -10,7 +10,7 @@ interface NewsItem {
 }
 
 const CATEGORY_TABS: CategoryTab[] = [
-  { slug: 'epl', label: 'EPL' },
+  { slug: 'epl', label: 'European Football' },
   { slug: 'artificial-intelligence', label: 'Artificial Intelligence' },
   { slug: 'technology', label: 'Technology' },
   { slug: 'finance', label: 'Finance' },

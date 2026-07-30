@@ -7,7 +7,7 @@ Allows a visitor to switch between thematic news categories via tabs and browse 
 ## Requirements
 
 ### Requirement: Category tabs panel
-The system SHALL show a tab panel with the following news categories: Artificial Intelligence, Technology, Finance, Gadgets, Digital Currencies, Playstation, Apple, IT Jobs, as well as a tab with the existing EPL news feed.
+The system SHALL show a tab panel with the following news categories: Artificial Intelligence, Technology, Finance, Gadgets, Digital Currencies, Playstation, Apple, IT Jobs, as well as a tab with the European football news feed (covering the top domestic leagues and major UEFA club competitions).
 
 #### Scenario: Displaying tabs
 - **WHEN** a visitor opens the page
@@ -25,7 +25,7 @@ News for a category SHALL be loaded only after the visitor's first click on the 
 - **THEN** the system does not request that category's news until the tab is opened
 
 ### Requirement: Category feed content
-Each category SHALL show up to 10 of the newest news items, sorted from newest to oldest, in the same card format as the EPL feed (title, excerpt, image on the left, publication date and time, link to source). The excerpt SHALL be visually truncated to 4 lines of text, regardless of the length of the description provided by that category's news source.
+Each category SHALL show up to 10 of the newest news items, sorted from newest to oldest, in the same card format as the European football feed (title, excerpt, image on the left, publication date and time, link to source). The excerpt SHALL be visually truncated to 4 lines of text, regardless of the length of the description provided by that category's news source.
 
 #### Scenario: Category returns 10 or more news items
 - **WHEN** the news source returns 10 or more news items matching the category's topic

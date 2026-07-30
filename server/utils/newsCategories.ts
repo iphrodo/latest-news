@@ -1,4 +1,4 @@
-import { EPL_KEYWORDS } from './newsFilter'
+import { EUROPEAN_FOOTBALL_KEYWORDS } from './newsFilter'
 
 export interface NewsCategoryConfig {
   label: string
@@ -7,7 +7,7 @@ export interface NewsCategoryConfig {
   keywords?: string[]
 }
 
-const BBC_FOOTBALL_FEED_URL = 'https://feeds.bbci.co.uk/sport/football/rss.xml'
+const SKY_SPORTS_FOOTBALL_FEED_URL = 'https://www.skysports.com/rss/11095'
 const COMPUTERWORLD_FEED_URL = 'https://www.computerworld.com/feed/'
 const AI_NEWS_FEED_URL = 'https://siliconangle.com/category/ai/feed/'
 const TECHCRUNCH_LAYOFFS_FEED_URL = 'https://techcrunch.com/tag/layoffs/feed/'
@@ -20,9 +20,9 @@ const TECHREPUBLIC_IT_EMPLOYMENT_FEED_URL = 'https://www.techrepublic.com/rssfee
 
 export const NEWS_CATEGORIES: Record<string, NewsCategoryConfig> = {
   epl: {
-    label: 'EPL',
-    feedUrl: BBC_FOOTBALL_FEED_URL,
-    keywords: EPL_KEYWORDS,
+    label: 'European Football',
+    feedUrl: SKY_SPORTS_FOOTBALL_FEED_URL,
+    keywords: EUROPEAN_FOOTBALL_KEYWORDS,
   },
   technology: {
     label: 'Technology',

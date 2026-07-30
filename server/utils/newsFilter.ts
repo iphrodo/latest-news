@@ -1,6 +1,7 @@
 import type { RawNewsItem } from './rss'
 
-export const EPL_KEYWORDS = [
+export const EUROPEAN_FOOTBALL_KEYWORDS = [
+  // Premier League
   'premier league',
   'arsenal',
   'aston villa',
@@ -24,10 +25,34 @@ export const EPL_KEYWORDS = [
   'west ham',
   'wolves',
   'wolverhampton',
+  // UEFA club competitions
+  'champions league',
+  'europa league',
+  'conference league',
+  'uefa',
+  // La Liga
+  'la liga',
+  'real madrid',
+  'barcelona',
+  'atletico madrid',
+  // Serie A
+  'serie a',
+  'juventus',
+  'ac milan',
+  'inter milan',
+  'napoli',
+  // Bundesliga
+  'bundesliga',
+  'bayern munich',
+  'borussia dortmund',
+  // Ligue 1
+  'ligue 1',
+  'psg',
+  'paris saint-germain',
 ]
 
-export function isEplNews(item: RawNewsItem): boolean {
-  return matchesKeywords(item, EPL_KEYWORDS)
+export function isEuropeanFootballNews(item: RawNewsItem): boolean {
+  return matchesKeywords(item, EUROPEAN_FOOTBALL_KEYWORDS)
 }
 
 function matchesKeywords(item: RawNewsItem, keywords: string[]): boolean {
