@@ -31,4 +31,12 @@ describe('NewsCard', () => {
     expect(placeholder.exists()).toBe(true)
     expect(placeholder.find('svg').exists()).toBe(true)
   })
+
+  it('formats the publication date/time in English, independent of the runtime timezone', () => {
+    const wrapper = mount(NewsCard, {
+      props: { ...baseProps, imageUrl: null },
+    })
+
+    expect(wrapper.find('.news-card__date').text()).toBe('30 July 2026 at 12:00')
+  })
 })
