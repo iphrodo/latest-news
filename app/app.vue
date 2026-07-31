@@ -39,6 +39,15 @@ const activeStatus = computed(() => status.value[activeCategory.value] ?? 'idle'
 <template>
   <div class="page">
     <header class="page__header">
+      <svg class="page__logo" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path
+          d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"
+          fill="#f97316"
+          stroke="#f97316"
+          stroke-width="1.2"
+          stroke-linejoin="round"
+        />
+      </svg>
       <h1>Latest News</h1>
     </header>
 
@@ -108,9 +117,40 @@ body {
   padding: 1.5rem 1rem 3rem;
 }
 
+.page__header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+}
+
 .page__header h1 {
   font-size: 1.6rem;
-  margin-bottom: 1.5rem;
+  margin: 0;
+}
+
+.page__logo {
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  animation: logo-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes logo-pulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 0 rgba(249, 115, 22, 0));
+  }
+  50% {
+    transform: scale(1.12);
+    filter: drop-shadow(0 0 6px rgba(249, 115, 22, 0.55));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page__logo {
+    animation: none;
+  }
 }
 
 .news-list {
