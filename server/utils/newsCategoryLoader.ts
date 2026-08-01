@@ -5,6 +5,15 @@ import type { NewsCategoryConfig } from './newsCategories'
 
 const NEWS_LIMIT = 20
 
+const PUSH_SQUARE_SOURCE = 'Push Square'
+
+function proxyPushSquareImages(news: RawNewsItem[]): RawNewsItem[] {
+  return news.map((item) => {
+    if (item.source !== PUSH_SQUARE_SOURCE || !item.imageUrl) return item
+    return { ...item, imageUrl: `/api/image-proxy?url=${encodeURIComponent(item.imageUrl)}` }
+  })
+}
+
 async function fillMissingImages(news: RawNewsItem[]): Promise<RawNewsItem[]> {
   const results = await Promise.allSettled(
     news.map((item) => (item.imageUrl === null ? fetchArticleImageUrl(item.link) : Promise.resolve(item.imageUrl))),
@@ -38,5 +47,6 @@ export async function loadCategoryNews(config: NewsCategoryConfig) {
 
   const items = fulfilled.flatMap((result) => result.value)
   const news = selectLatestNews(items, NEWS_LIMIT, config.keywords)
-  return await fillMissingImages(news)
+  const withImages = await fillMissingImages(news)
+  return proxyPushSquareImages(withImages)
 }

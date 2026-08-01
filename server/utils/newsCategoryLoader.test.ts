@@ -137,4 +137,34 @@ describe('loadCategoryNews', () => {
       'https://example.com/feed-image.jpg',
     )
   })
+
+  it('rewrites Push Square imageUrl to the image proxy route, leaving other sources untouched', async () => {
+    fetchNewsFeedXml.mockResolvedValue('<rss></rss>')
+    parseNewsFeedXml.mockReturnValue([
+      newsItem({
+        title: 'PS5 news',
+        link: 'https://example.com/ps5-news',
+        source: 'Push Square',
+        imageUrl: 'https://images.pushsquare.com/thumb.jpg',
+      }),
+      newsItem({
+        title: 'Other source news',
+        link: 'https://example.com/other-news',
+        source: 'Other Source',
+        imageUrl: 'https://example.com/other-image.jpg',
+      }),
+    ])
+
+    const news = await loadCategoryNews({
+      label: 'Playstation',
+      feedUrls: [{ url: 'https://primary.example/feed', source: 'Push Square' }],
+    })
+
+    expect(news.find((item) => item.link === 'https://example.com/ps5-news')?.imageUrl).toBe(
+      '/api/image-proxy?url=https%3A%2F%2Fimages.pushsquare.com%2Fthumb.jpg',
+    )
+    expect(news.find((item) => item.link === 'https://example.com/other-news')?.imageUrl).toBe(
+      'https://example.com/other-image.jpg',
+    )
+  })
 })

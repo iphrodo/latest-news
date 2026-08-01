@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+
 defineProps<{
   title: string
   excerpt: string
@@ -7,6 +9,8 @@ defineProps<{
   imageUrl: string | null
   source: string
 }>()
+
+const imageFailedToLoad = ref(false)
 
 function formatDate(value: string): string {
   const date = new Date(value)
@@ -25,11 +29,12 @@ function formatDate(value: string): string {
 <template>
   <a class="news-card" :href="link" target="_blank" rel="noopener noreferrer">
     <img
-      v-if="imageUrl"
+      v-if="imageUrl && !imageFailedToLoad"
       class="news-card__image"
       :src="imageUrl"
       :alt="title"
       loading="lazy"
+      @error="imageFailedToLoad = true"
     />
     <div v-else class="news-card__image news-card__image--placeholder" data-testid="news-card-image-placeholder" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

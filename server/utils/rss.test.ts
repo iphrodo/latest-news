@@ -76,6 +76,19 @@ describe('parseNewsFeedXml image extraction', () => {
     const [item] = parseNewsFeedXml(xml, 'Test Source')
     expect(item?.imageUrl).toBe('https://example.com/photo.jpg')
   })
+
+  it('extracts an image enclosure even when its type is mislabeled (e.g. Investing.com uses text/html)', () => {
+    const xml = wrapItem(`
+      <title>Title</title>
+      <description>Excerpt</description>
+      <link>https://example.com/a</link>
+      <pubDate>Thu, 30 Jul 2026 12:00:00 +0000</pubDate>
+      <enclosure url="https://i-invdn-com.investing.com/news/photo.jpg" type="text/html; charset=UTF-8" />
+    `)
+
+    const [item] = parseNewsFeedXml(xml, 'Test Source')
+    expect(item?.imageUrl).toBe('https://i-invdn-com.investing.com/news/photo.jpg')
+  })
 })
 
 describe('parseNewsFeedXml entity decoding', () => {
