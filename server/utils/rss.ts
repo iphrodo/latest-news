@@ -83,10 +83,14 @@ function extractImageUrlFromHtml(html: string | undefined): string | null {
   return match?.[1] ?? null
 }
 
+const IMAGE_EXTENSION_PATTERN = /\.(jpe?g|png|gif|webp|avif)(?:$|[?#])/i
+
 function isImageEnclosure(enclosure: { '@_url'?: string; '@_type'?: string }): boolean {
-  if (!enclosure['@_url']) return false
+  const url = enclosure['@_url']
+  if (!url) return false
   if (!enclosure['@_type']) return true
-  return enclosure['@_type'].startsWith('image/')
+  if (enclosure['@_type'].startsWith('image/')) return true
+  return IMAGE_EXTENSION_PATTERN.test(url)
 }
 
 function extractImageUrl(item: Record<string, unknown>): string | null {

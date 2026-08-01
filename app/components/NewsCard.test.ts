@@ -33,6 +33,18 @@ describe('NewsCard', () => {
     expect(placeholder.find('svg').exists()).toBe(true)
   })
 
+  it('falls back to the placeholder when the image fails to load', async () => {
+    const wrapper = mount(NewsCard, {
+      props: { ...baseProps, imageUrl: 'https://example.com/broken.jpg' },
+    })
+
+    expect(wrapper.find('img.news-card__image').exists()).toBe(true)
+    await wrapper.find('img.news-card__image').trigger('error')
+
+    expect(wrapper.find('img.news-card__image').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="news-card-image-placeholder"]').exists()).toBe(true)
+  })
+
   it('formats the publication date/time in English, independent of the runtime timezone', () => {
     const wrapper = mount(NewsCard, {
       props: { ...baseProps, imageUrl: null },
