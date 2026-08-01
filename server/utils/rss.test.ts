@@ -21,7 +21,7 @@ describe('parseNewsFeedXml image extraction', () => {
       <media:thumbnail url="https://example.com/thumb.jpg" />
     `)
 
-    const [item] = parseNewsFeedXml(xml)
+    const [item] = parseNewsFeedXml(xml, 'Test Source')
     expect(item?.imageUrl).toBe('https://example.com/thumb.jpg')
   })
 
@@ -33,7 +33,7 @@ describe('parseNewsFeedXml image extraction', () => {
       <pubDate>Thu, 30 Jul 2026 12:00:00 +0000</pubDate>
     `)
 
-    const [item] = parseNewsFeedXml(xml)
+    const [item] = parseNewsFeedXml(xml, 'Test Source')
     expect(item?.imageUrl).toBe('https://example.com/feat.webp')
   })
 
@@ -46,7 +46,7 @@ describe('parseNewsFeedXml image extraction', () => {
       <pubDate>Thu, 30 Jul 2026 12:00:00 +0000</pubDate>
     `)
 
-    const [item] = parseNewsFeedXml(xml)
+    const [item] = parseNewsFeedXml(xml, 'Test Source')
     expect(item?.imageUrl).toBe('https://example.com/content.jpg')
   })
 
@@ -59,7 +59,7 @@ describe('parseNewsFeedXml image extraction', () => {
       <enclosure url="https://example.com/video.mp4" type="video/mp4" />
     `)
 
-    const [item] = parseNewsFeedXml(xml)
+    const [item] = parseNewsFeedXml(xml, 'Test Source')
     expect(item?.imageUrl).toBeNull()
   })
 
@@ -73,7 +73,7 @@ describe('parseNewsFeedXml image extraction', () => {
       <enclosure url="https://example.com/photo.jpg" type="image/jpeg" />
     `)
 
-    const [item] = parseNewsFeedXml(xml)
+    const [item] = parseNewsFeedXml(xml, 'Test Source')
     expect(item?.imageUrl).toBe('https://example.com/photo.jpg')
   })
 })
@@ -87,7 +87,7 @@ describe('parseNewsFeedXml entity decoding', () => {
       <pubDate>Thu, 30 Jul 2026 12:00:00 +0000</pubDate>
     `)
 
-    const [item] = parseNewsFeedXml(xml)
+    const [item] = parseNewsFeedXml(xml, 'Test Source')
     expect(item?.title).toBe('Apple’s modem transition & Qualcomm”s response')
     expect(item?.excerpt).toBe('Reports — some are “overstated” say analysts')
   })
@@ -100,7 +100,7 @@ describe('parseNewsFeedXml entity decoding', () => {
       <pubDate>Thu, 30 Jul 2026 12:00:00 +0000</pubDate>
     `)
 
-    const [item] = parseNewsFeedXml(xml)
+    const [item] = parseNewsFeedXml(xml, 'Test Source')
     expect(item?.excerpt).toBe("Hello! I’m back for the last time (…maybe) to share what’s next.")
   })
 })
@@ -114,7 +114,7 @@ describe('parseNewsFeedXml publication date normalization', () => {
       <pubDate>Thu, 30 Jul 2026 16:15:00 BST</pubDate>
     `)
 
-    const [item] = parseNewsFeedXml(xml)
+    const [item] = parseNewsFeedXml(xml, 'Test Source')
     const parsed = new Date(item?.publishedAt ?? '')
     expect(Number.isNaN(parsed.getTime())).toBe(false)
     expect(parsed.toISOString()).toBe('2026-07-30T15:15:00.000Z')
@@ -128,7 +128,7 @@ describe('parseNewsFeedXml publication date normalization', () => {
       <pubDate>Thu, 30 Jul 2026 16:15:00 GMT</pubDate>
     `)
 
-    const [item] = parseNewsFeedXml(xml)
+    const [item] = parseNewsFeedXml(xml, 'Test Source')
     const parsed = new Date(item?.publishedAt ?? '')
     expect(Number.isNaN(parsed.getTime())).toBe(false)
     expect(parsed.toISOString()).toBe('2026-07-30T16:15:00.000Z')

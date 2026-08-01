@@ -3,7 +3,7 @@ import { selectLatestNews } from './newsFilter'
 import { fetchArticleImageUrl } from './articleImage'
 import type { NewsCategoryConfig } from './newsCategories'
 
-const NEWS_LIMIT = 10
+const NEWS_LIMIT = 20
 
 async function fillMissingImages(news: RawNewsItem[]): Promise<RawNewsItem[]> {
   const results = await Promise.allSettled(
@@ -18,29 +18,25 @@ async function fillMissingImages(news: RawNewsItem[]): Promise<RawNewsItem[]> {
 }
 
 export async function loadCategoryNews(config: NewsCategoryConfig) {
-  try {
-    const xml = await fetchNewsFeedXml(config.feedUrl)
-    const items = parseNewsFeedXml(xml)
-    const news = selectLatestNews(items, NEWS_LIMIT, config.keywords)
-    if (news.length > 0) return await fillMissingImages(news)
-    if (!config.fallbackFeedUrl) return news
+  const results = await Promise.allSettled(
+    config.feedUrls.map(async ({ url, source }) => {
+      const xml = await fetchNewsFeedXml(url)
+      return parseNewsFeedXml(xml, source)
+    }),
+  )
 
-    const fallbackXml = await fetchNewsFeedXml(config.fallbackFeedUrl)
-    const fallbackItems = parseNewsFeedXml(fallbackXml)
-    const fallbackNews = selectLatestNews(fallbackItems, NEWS_LIMIT, config.keywords)
-    return await fillMissingImages(fallbackNews)
-  } catch (primaryError) {
-    if (!config.fallbackFeedUrl) {
-      throw new Error(`Failed to load ${config.label} news feed`, { cause: primaryError })
-    }
+  const fulfilled = results.filter(
+    (result): result is PromiseFulfilledResult<RawNewsItem[]> => result.status === 'fulfilled',
+  )
 
-    try {
-      const xml = await fetchNewsFeedXml(config.fallbackFeedUrl)
-      const items = parseNewsFeedXml(xml)
-      const news = selectLatestNews(items, NEWS_LIMIT, config.keywords)
-      return await fillMissingImages(news)
-    } catch (fallbackError) {
-      throw new Error(`Failed to load ${config.label} news feed`, { cause: fallbackError })
-    }
+  if (fulfilled.length === 0) {
+    const firstError = results.find(
+      (result): result is PromiseRejectedResult => result.status === 'rejected',
+    )?.reason
+    throw new Error(`Failed to load ${config.label} news feed`, { cause: firstError })
   }
+
+  const items = fulfilled.flatMap((result) => result.value)
+  const news = selectLatestNews(items, NEWS_LIMIT, config.keywords)
+  return await fillMissingImages(news)
 }

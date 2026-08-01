@@ -22,6 +22,7 @@ function newsItem(overrides: Partial<RawNewsItem> = {}): RawNewsItem {
     publishedAt: 'Thu, 30 Jul 2026 12:00:00 +0000',
     link: 'https://example.com/article',
     imageUrl: null,
+    source: 'Example Source',
     ...overrides,
   }
 }
@@ -33,55 +34,53 @@ describe('loadCategoryNews', () => {
     fetchArticleImageUrl.mockReset()
   })
 
-  it('falls back to the fallback feed when the primary feed has no matching keywords', async () => {
+  it('merges items from all configured sources', async () => {
     fetchNewsFeedXml.mockImplementation(async (url: string) => url)
-    parseNewsFeedXml.mockImplementation((xml: string) => {
-      if (xml === 'https://primary.example/feed') {
-        return [newsItem({ title: 'Unrelated general tech article' })]
+    parseNewsFeedXml.mockImplementation((xml: string, source: string) => {
+      if (xml === 'https://one.example/feed') {
+        return [newsItem({ title: 'Article one', link: 'https://example.com/one', source })]
       }
-      return [newsItem({ title: 'Company announces layoffs', link: 'https://example.com/layoffs' })]
+      return [newsItem({ title: 'Article two', link: 'https://example.com/two', source })]
+    })
+
+    const news = await loadCategoryNews({
+      label: 'Technology',
+      feedUrls: [
+        { url: 'https://one.example/feed', source: 'Source One' },
+        { url: 'https://two.example/feed', source: 'Source Two' },
+      ],
+    })
+
+    expect(fetchNewsFeedXml).toHaveBeenCalledWith('https://one.example/feed')
+    expect(fetchNewsFeedXml).toHaveBeenCalledWith('https://two.example/feed')
+    expect(news).toHaveLength(2)
+    expect(news.find((item) => item.link === 'https://example.com/one')?.source).toBe('Source One')
+    expect(news.find((item) => item.link === 'https://example.com/two')?.source).toBe('Source Two')
+  })
+
+  it('filters merged items by keywords', async () => {
+    fetchNewsFeedXml.mockImplementation(async (url: string) => url)
+    parseNewsFeedXml.mockImplementation((xml: string, source: string) => {
+      if (xml === 'https://one.example/feed') {
+        return [newsItem({ title: 'Unrelated general tech article', source })]
+      }
+      return [newsItem({ title: 'Company announces layoffs', link: 'https://example.com/layoffs', source })]
     })
 
     const news = await loadCategoryNews({
       label: 'IT Jobs',
-      feedUrl: 'https://primary.example/feed',
-      fallbackFeedUrl: 'https://fallback.example/feed',
+      feedUrls: [
+        { url: 'https://one.example/feed', source: 'Source One' },
+        { url: 'https://two.example/feed', source: 'Source Two' },
+      ],
       keywords: ['layoffs'],
     })
 
-    expect(fetchNewsFeedXml).toHaveBeenCalledWith('https://primary.example/feed')
-    expect(fetchNewsFeedXml).toHaveBeenCalledWith('https://fallback.example/feed')
     expect(news).toHaveLength(1)
     expect(news[0]?.title).toBe('Company announces layoffs')
   })
 
-  it('returns the primary feed results when they already match', async () => {
-    fetchNewsFeedXml.mockResolvedValue('<rss></rss>')
-    parseNewsFeedXml.mockReturnValue([newsItem()])
-
-    const news = await loadCategoryNews({
-      label: 'Technology',
-      feedUrl: 'https://primary.example/feed',
-    })
-
-    expect(fetchNewsFeedXml).toHaveBeenCalledTimes(1)
-    expect(news).toHaveLength(1)
-  })
-
-  it('does not fall back when the primary feed has no matches but no fallback is configured', async () => {
-    fetchNewsFeedXml.mockResolvedValue('<rss></rss>')
-    parseNewsFeedXml.mockReturnValue([])
-
-    const news = await loadCategoryNews({
-      label: 'Technology',
-      feedUrl: 'https://primary.example/feed',
-    })
-
-    expect(fetchNewsFeedXml).toHaveBeenCalledTimes(1)
-    expect(news).toHaveLength(0)
-  })
-
-  it('falls back when the primary feed request throws', async () => {
+  it('returns items from the remaining sources when one source rejects', async () => {
     fetchNewsFeedXml
       .mockRejectedValueOnce(new Error('network error'))
       .mockResolvedValueOnce('<rss></rss>')
@@ -89,21 +88,25 @@ describe('loadCategoryNews', () => {
 
     const news = await loadCategoryNews({
       label: 'IT Jobs',
-      feedUrl: 'https://primary.example/feed',
-      fallbackFeedUrl: 'https://fallback.example/feed',
+      feedUrls: [
+        { url: 'https://one.example/feed', source: 'Source One' },
+        { url: 'https://two.example/feed', source: 'Source Two' },
+      ],
     })
 
     expect(news).toHaveLength(1)
   })
 
-  it('throws when both the primary and fallback feeds fail', async () => {
+  it('throws when every source fails', async () => {
     fetchNewsFeedXml.mockRejectedValue(new Error('network error'))
 
     await expect(
       loadCategoryNews({
         label: 'IT Jobs',
-        feedUrl: 'https://primary.example/feed',
-        fallbackFeedUrl: 'https://fallback.example/feed',
+        feedUrls: [
+          { url: 'https://one.example/feed', source: 'Source One' },
+          { url: 'https://two.example/feed', source: 'Source Two' },
+        ],
       }),
     ).rejects.toThrow('Failed to load IT Jobs news feed')
   })
@@ -122,7 +125,7 @@ describe('loadCategoryNews', () => {
 
     const news = await loadCategoryNews({
       label: 'Technology',
-      feedUrl: 'https://primary.example/feed',
+      feedUrls: [{ url: 'https://primary.example/feed', source: 'Source' }],
     })
 
     expect(fetchArticleImageUrl).toHaveBeenCalledTimes(1)

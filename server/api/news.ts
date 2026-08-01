@@ -1,14 +1,11 @@
-import { fetchNewsFeedXml, parseNewsFeedXml } from '../utils/rss'
-import { EUROPEAN_FOOTBALL_KEYWORDS, selectLatestNews } from '../utils/newsFilter'
-
-const RSS_FEED_URL = 'https://www.skysports.com/rss/11095'
-const NEWS_LIMIT = 10
+import { NEWS_CATEGORIES } from '../utils/newsCategories'
+import { loadCategoryNews } from '../utils/newsCategoryLoader'
 
 export default defineEventHandler(async () => {
+  const config = NEWS_CATEGORIES.epl!
+
   try {
-    const xml = await fetchNewsFeedXml(RSS_FEED_URL)
-    const items = parseNewsFeedXml(xml)
-    return selectLatestNews(items, NEWS_LIMIT, EUROPEAN_FOOTBALL_KEYWORDS)
+    return await loadCategoryNews(config)
   } catch (error) {
     throw createError({
       statusCode: 502,

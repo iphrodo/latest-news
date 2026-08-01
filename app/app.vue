@@ -7,6 +7,7 @@ interface NewsItem {
   publishedAt: string
   link: string
   imageUrl: string | null
+  source: string
 }
 
 const CATEGORY_TABS: CategoryTab[] = [
@@ -70,6 +71,7 @@ const activeStatus = computed(() => status.value[activeCategory.value] ?? 'idle'
               :published-at="item.publishedAt"
               :link="item.link"
               :image-url="item.imageUrl"
+              :source="item.source"
             />
           </li>
         </ul>
@@ -91,6 +93,7 @@ const activeStatus = computed(() => status.value[activeCategory.value] ?? 'idle'
               :published-at="item.publishedAt"
               :link="item.link"
               :image-url="item.imageUrl"
+              :source="item.source"
             />
           </li>
         </ul>
