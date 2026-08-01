@@ -1,10 +1,4 @@
-# epl-news-landing Specification
-
-## Purpose
-
-This capability describes a landing page that fetches and displays the 10 latest English Premier League news items for site visitors.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Display 10 latest news items
 The system SHALL fetch European football news from multiple news sources and merge them into a single list, deduplicated across sources, sorted from newest to oldest by publication date. European football news includes news about the top domestic leagues (Premier League, La Liga, Serie A, Bundesliga, Ligue 1) and major UEFA club competitions (Champions League, Europa League, Conference League). The system SHALL display at least as many items as the previous single-source behavior provided (up to a configured maximum), and never fewer than the number of unique available items.
@@ -47,24 +41,3 @@ Each news item on the page SHALL display a title, a short description (excerpt),
 #### Scenario: News description longer than 4 lines
 - **WHEN** the news description provided by the source is longer than 4 lines of text in the card
 - **THEN** the system visually truncates the excerpt to 4 lines, without stretching the card to fit the entire description text
-
-### Requirement: Loading state
-While fetching news from the external source, the system SHALL show a loading indicator instead of an empty or stale page.
-
-#### Scenario: Data is still loading
-- **WHEN** a visitor opens the page and the news request is still in progress
-- **THEN** the system shows a loading indicator until the response is received
-
-### Requirement: News source error handling
-If the news source is unavailable or returns an error, the system SHALL show a clear error message to the user, without crashing the page.
-
-#### Scenario: News source is unavailable
-- **WHEN** the request to the news source fails or times out
-- **THEN** the system shows an error message with the option to retry, while the page remains functional
-
-### Requirement: Responsive layout
-The landing page SHALL display correctly on both mobile and desktop screen sizes.
-
-#### Scenario: Viewing on a mobile device
-- **WHEN** a visitor opens the page on a screen narrower than 480px
-- **THEN** the news list displays in a single column without horizontal scrolling

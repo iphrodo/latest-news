@@ -7,6 +7,7 @@ const baseProps = {
   excerpt: 'Example excerpt',
   publishedAt: '2026-07-30T12:00:00Z',
   link: 'https://example.com/article',
+  source: 'Example Source',
 }
 
 describe('NewsCard', () => {
@@ -38,5 +39,13 @@ describe('NewsCard', () => {
     })
 
     expect(wrapper.find('.news-card__date').text()).toBe('30 July 2026 at 12:00')
+  })
+
+  it('renders the source name near the publication date', () => {
+    const wrapper = mount(NewsCard, {
+      props: { ...baseProps, imageUrl: null },
+    })
+
+    expect(wrapper.find('.news-card__source').text()).toBe('Example Source')
   })
 })

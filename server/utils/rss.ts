@@ -6,6 +6,7 @@ export interface RawNewsItem {
   publishedAt: string
   link: string
   imageUrl: string | null
+  source: string
 }
 
 const FETCH_TIMEOUT_MS = 5000
@@ -120,7 +121,7 @@ function extractImageUrl(item: Record<string, unknown>): string | null {
   return null
 }
 
-export function parseNewsFeedXml(xml: string): RawNewsItem[] {
+export function parseNewsFeedXml(xml: string, sourceName: string): RawNewsItem[] {
   const parser = new XMLParser({ ignoreAttributes: false, processEntities: true, htmlEntities: true })
   const parsed = parser.parse(xml)
   const items = parsed?.rss?.channel?.item
@@ -135,5 +136,6 @@ export function parseNewsFeedXml(xml: string): RawNewsItem[] {
     publishedAt: normalizePubDate(String(item.pubDate ?? '')),
     link: String(item.link ?? ''),
     imageUrl: extractImageUrl(item),
+    source: sourceName,
   }))
 }

@@ -5,6 +5,7 @@ defineProps<{
   publishedAt: string
   link: string
   imageUrl: string | null
+  source: string
 }>()
 
 function formatDate(value: string): string {
@@ -40,7 +41,10 @@ function formatDate(value: string): string {
     <div class="news-card__body">
       <h2 class="news-card__title">{{ title }}</h2>
       <p class="news-card__excerpt">{{ excerpt }}</p>
-      <time class="news-card__date" :datetime="publishedAt">{{ formatDate(publishedAt) }}</time>
+      <p class="news-card__meta">
+        <span class="news-card__source">{{ source }}</span>
+        <time class="news-card__date" :datetime="publishedAt">{{ formatDate(publishedAt) }}</time>
+      </p>
     </div>
   </a>
 </template>
@@ -103,9 +107,25 @@ function formatDate(value: string): string {
   font-size: 0.95rem;
 }
 
-.news-card__date {
+.news-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
   color: #6b7280;
   font-size: 0.85rem;
+}
+
+.news-card__source {
+  font-weight: 600;
+  color: #374151;
+}
+
+.news-card__source::after {
+  content: '·';
+  margin-left: 0.5rem;
+  color: #9ca3af;
+  font-weight: 400;
 }
 
 @media (max-width: 480px) {
