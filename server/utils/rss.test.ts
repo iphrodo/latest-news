@@ -116,6 +116,18 @@ describe('parseNewsFeedXml entity decoding', () => {
     const [item] = parseNewsFeedXml(xml, 'Test Source')
     expect(item?.excerpt).toBe("Hello! I’m back for the last time (…maybe) to share what’s next.")
   })
+
+  it('strips markup that only becomes real HTML tags after entity decoding (e.g. escaped <link>/<img> boilerplate)', () => {
+    const xml = wrapItem(`
+      <title>Title</title>
+      <description>&lt;link type=&quot;text/css&quot; rel=&quot;stylesheet&quot; href=&quot;https://example.com/s.css&quot; /&gt;NEW YORK, Aug 18, 2026 (GLOBE) -- Actual summary text.</description>
+      <link>https://example.com/a</link>
+      <pubDate>Thu, 30 Jul 2026 12:00:00 +0000</pubDate>
+    `)
+
+    const [item] = parseNewsFeedXml(xml, 'Test Source')
+    expect(item?.excerpt).toBe('NEW YORK, Aug 18, 2026 (GLOBE) -- Actual summary text.')
+  })
 })
 
 describe('parseNewsFeedXml publication date normalization', () => {

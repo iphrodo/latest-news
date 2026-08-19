@@ -1,0 +1,79 @@
+/* Warm "Organic" design tokens — light (default) and dark theme value sets.
+   Components MUST reference these custom properties rather than literal
+   colors, fonts, radii, or shadows. */
+
+:root {
+  /* color */
+  --color-bg: #f5ead8;
+  --color-surface: #ebddc5;
+  --color-text: #201e1d;
+  --color-divider: rgba(32, 30, 29, 0.16);
+
+  --color-neutral-200: color-mix(in srgb, #201e1d 8%, #ebddc5);
+  --color-neutral-300: color-mix(in srgb, #201e1d 16%, #ebddc5);
+  --color-neutral-400: color-mix(in srgb, #201e1d 32%, #ebddc5);
+  --color-neutral-600: #645c50;
+  --color-neutral-700: #82796a;
+
+  --color-accent: #c67139;
+  --color-accent-100: color-mix(in srgb, #c67139 12%, #f5ead8);
+  --color-accent-200: color-mix(in srgb, #c67139 22%, #f5ead8);
+  --color-accent-300: color-mix(in srgb, #c67139 45%, #f5ead8);
+  --color-accent-400: color-mix(in srgb, #c67139 65%, #f5ead8);
+  --color-accent-600: color-mix(in srgb, #c67139 88%, black 6%);
+  --color-accent-700: #8c491a;
+
+  --color-accent-2: #7a8a5e;
+  --color-accent-2-100: color-mix(in srgb, #7a8a5e 12%, #f5ead8);
+  --color-accent-2-200: color-mix(in srgb, #7a8a5e 24%, #f5ead8);
+  --color-accent-2-400: color-mix(in srgb, #7a8a5e 55%, #f5ead8);
+  --color-accent-2-700: #4f5c3c;
+
+  --color-on-accent: #fff6ec;
+
+  /* typography */
+  --font-heading: 'Caprasimo', 'Georgia', serif;
+  --font-body: 'Figtree', system-ui, -apple-system, sans-serif;
+
+  /* radius */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-thumb: 14px;
+  --radius-pill: 999px;
+
+  /* shadow */
+  --shadow-sm: 0 1px 2px rgba(32, 30, 29, 0.14);
+  --shadow-md: 0 4px 14px rgba(32, 30, 29, 0.18);
+}
+
+:root[data-theme='dark'] {
+  --color-bg: #1b1917;
+  --color-surface: #262320;
+  --color-text: #f3e9da;
+  --color-divider: color-mix(in srgb, #f3e9da 16%, transparent);
+
+  --color-neutral-200: #322e29;
+  --color-neutral-300: #3d3833;
+  --color-neutral-400: #6c6357;
+  --color-neutral-600: #b3a794;
+  --color-neutral-700: #cabda8;
+
+  --color-accent: #c67139;
+  --color-accent-100: #3a281c;
+  --color-accent-200: #4a3320;
+  --color-accent-300: color-mix(in srgb, #f0a271 45%, #1b1917);
+  --color-accent-400: color-mix(in srgb, #f0a271 65%, #1b1917);
+  --color-accent-600: color-mix(in srgb, #f0a271 85%, white 6%);
+  --color-accent-700: #f0a271;
+
+  --color-accent-2: #7a8a5e;
+  --color-accent-2-100: #262e1c;
+  --color-accent-2-200: #2f3a22;
+  --color-accent-2-400: color-mix(in srgb, #cddcb3 45%, #1b1917);
+  --color-accent-2-700: #cddcb3;
+
+  --color-on-accent: #fff6ec;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.5);
+}

@@ -1,14 +1,6 @@
 <script setup lang="ts">
 import type { CategoryTab } from './components/CategoryTabs.vue'
-
-interface NewsItem {
-  title: string
-  excerpt: string
-  publishedAt: string
-  link: string
-  imageUrl: string | null
-  source: string
-}
+import { formatRelativeTime } from './utils/relativeTime'
 
 const CATEGORY_TABS: CategoryTab[] = [
   { slug: 'epl', label: 'European Football' },
@@ -23,175 +15,465 @@ const CATEGORY_TABS: CategoryTab[] = [
   { slug: 'it-jobs', label: 'IT Jobs' },
 ]
 
-const { data: eplNews, pending: eplPending, error: eplError, refresh: refreshEpl } = await useFetch<NewsItem[]>('/api/news')
+const ALL_TAB: CategoryTab = { slug: 'all', label: 'All news' }
+const TABS: CategoryTab[] = [ALL_TAB, ...CATEGORY_TABS]
+const CATEGORY_SLUGS = CATEGORY_TABS.map((tab) => tab.slug)
+const CATEGORY_LABELS: Record<string, string> = Object.fromEntries(CATEGORY_TABS.map((tab) => [tab.slug, tab.label]))
 
-const { cache, status, loadCategory } = useNewsCategories()
-const activeCategory = ref('epl')
+useHead({
+  script: [
+    {
+      innerHTML:
+        "(function(){try{var t=localStorage.getItem('news.theme');if(t!=='light'&&t!=='dark'){t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'}document.documentElement.dataset.theme=t}catch(e){}})();",
+      tagPosition: 'head',
+    },
+  ],
+})
+
+const { cache, status, loadCategories, refreshCategories, allItems } = useNewsCategories()
+const { isRead, markRead, markAllRead, dimRead } = useReadState()
+const { boundary } = useLastVisit()
+const { density } = useDensity()
+const { theme, toggleTheme } = useTheme()
+
+const activeCategory = ref('all')
+const expandedId = ref<string | null>(null)
+
+onMounted(() => {
+  loadCategories(CATEGORY_SLUGS)
+})
 
 function selectCategory(slug: string) {
   activeCategory.value = slug
-  if (slug !== 'epl') loadCategory(slug)
+  expandedId.value = null
+  if (typeof window !== 'undefined') window.scrollTo(0, 0)
 }
 
-const activeNews = computed(() => cache.value[activeCategory.value])
-const activeStatus = computed(() => status.value[activeCategory.value] ?? 'idle')
+function sortedByPublishedDesc<T extends { published_at: string }>(items: T[]): T[] {
+  return items.slice().sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime())
+}
+
+const activeItems = computed(() => {
+  if (activeCategory.value === 'all') return allItems.value
+  return sortedByPublishedDesc(cache.value[activeCategory.value] ?? [])
+})
+
+const activeIsLoading = computed(() => {
+  if (activeCategory.value === 'all') {
+    return CATEGORY_SLUGS.every((slug) => !cache.value[slug]) && CATEGORY_SLUGS.some((slug) => status.value[slug] === 'pending')
+  }
+  return status.value[activeCategory.value] === 'pending' && !cache.value[activeCategory.value]
+})
+
+const activeHasError = computed(() => {
+  if (activeCategory.value === 'all') {
+    return CATEGORY_SLUGS.every((slug) => !cache.value[slug]) && CATEGORY_SLUGS.every((slug) => status.value[slug] === 'error')
+  }
+  return status.value[activeCategory.value] === 'error' && !cache.value[activeCategory.value]
+})
+
+const unreadCounts = computed(() => {
+  const counts: Record<string, number> = {}
+  for (const slug of CATEGORY_SLUGS) {
+    counts[slug] = (cache.value[slug] ?? []).filter((item) => !isRead(item.id)).length
+  }
+  counts.all = allItems.value.filter((item) => !isRead(item.id)).length
+  return counts
+})
+
+const statusLine = computed(() => {
+  const unread = unreadCounts.value[activeCategory.value] ?? 0
+  if (unread === 0) return 'All caught up'
+  const newest = activeItems.value[0]
+  return newest ? `${unread} unread · updated ${formatRelativeTime(newest.published_at)}` : `${unread} unread`
+})
+
+const footerLine = computed(() => {
+  if (activeCategory.value === 'all') {
+    return `${activeItems.value.length} stories from ${CATEGORY_SLUGS.length} feeds`
+  }
+  const tab = CATEGORY_TABS.find((t) => t.slug === activeCategory.value)
+  return `${activeItems.value.length} in ${tab?.label ?? activeCategory.value}`
+})
+
+const thumbSize = computed(() => (density.value === 'compact' ? 58 : density.value === 'large' ? 96 : 76))
+const clampLines = computed(() => (density.value === 'compact' ? 2 : 3))
+
+const feedEntries = computed(() => {
+  let dividerPlaced = false
+  let seenNew = false
+  return activeItems.value.map((item) => {
+    const isNew = new Date(item.published_at).getTime() >= boundary.value
+    if (isNew) seenNew = true
+    const showDivider = !isNew && seenNew && !dividerPlaced
+    if (showDivider) dividerPlaced = true
+    return { item, showDivider }
+  })
+})
+
+function handleCardTap(id: string) {
+  markRead(id)
+  expandedId.value = expandedId.value === id ? null : id
+}
+
+function handleMarkAllRead() {
+  markAllRead(activeItems.value.map((item) => item.id))
+}
+
+const refreshing = ref(false)
+const pullDistance = ref(0)
+let touchStartY: number | null = null
+let touchStartX: number | null = null
+
+async function refresh() {
+  if (refreshing.value) return
+  refreshing.value = true
+  pullDistance.value = 0
+  try {
+    const slugs = activeCategory.value === 'all' ? CATEGORY_SLUGS : [activeCategory.value]
+    await refreshCategories(slugs)
+  } finally {
+    refreshing.value = false
+  }
+}
+
+function onTouchStart(event: TouchEvent) {
+  const target = event.target as HTMLElement | null
+  const touch = event.touches[0]
+  const insideRail = target?.closest('.category-tabs') != null
+  if (insideRail || window.scrollY > 0 || !touch) {
+    touchStartY = null
+    touchStartX = null
+    return
+  }
+  touchStartY = touch.clientY
+  touchStartX = touch.clientX
+}
+
+function onTouchMove(event: TouchEvent) {
+  if (touchStartY == null || touchStartX == null || refreshing.value) return
+  const touch = event.touches[0]
+  if (!touch) return
+  const deltaY = touch.clientY - touchStartY
+  const deltaX = touch.clientX - touchStartX
+  if (Math.abs(deltaX) > Math.abs(deltaY)) {
+    // Predominantly horizontal drag (e.g. swiping the category rail) — not a pull-to-refresh.
+    touchStartY = null
+    touchStartX = null
+    pullDistance.value = 0
+    return
+  }
+  if (deltaY > 0) pullDistance.value = Math.min(90, deltaY * 0.55)
+}
+
+function onTouchEnd() {
+  if (pullDistance.value > 46) {
+    refresh()
+  } else {
+    pullDistance.value = 0
+  }
+  touchStartY = null
+  touchStartX = null
+}
+
+const pullHeight = computed(() => (refreshing.value ? 52 : Math.round(pullDistance.value)))
+const pullLabel = computed(() => {
+  if (refreshing.value) return 'Fetching new stories…'
+  return pullDistance.value > 46 ? 'Release to refresh' : 'Pull to refresh'
+})
 </script>
 
 <template>
-  <div class="page">
-    <header class="page__header">
-      <svg class="page__logo" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path
-          d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"
-          fill="#f97316"
-          stroke="#f97316"
-          stroke-width="1.2"
-          stroke-linejoin="round"
-        />
-      </svg>
-      <h1>Latest News</h1>
+  <div class="page" @touchstart="onTouchStart" @touchmove="onTouchMove" @touchend="onTouchEnd">
+    <header class="header">
+      <div class="header__row">
+        <div class="header__titles">
+          <h1 class="header__title">Latest News</h1>
+          <p class="header__status">{{ statusLine }}</p>
+        </div>
+        <button
+          type="button"
+          class="header__button"
+          :aria-label="theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
+          @click="toggleTheme"
+        >
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.5 14.8A8.7 8.7 0 0 1 9.2 3.5a8.7 8.7 0 1 0 11.3 11.3z" />
+          </svg>
+        </button>
+        <button type="button" class="header__button" aria-label="Mark all read" @click="handleMarkAllRead">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 13l4 4L14 7" /><path d="M12 16l2 2 8-11" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="header__rail">
+        <CategoryTabs :tabs="TABS" :active-slug="activeCategory" :unread-counts="unreadCounts" @select="selectCategory" />
+      </div>
+      <div class="header__divider" />
     </header>
 
-    <CategoryTabs :tabs="CATEGORY_TABS" :active-slug="activeCategory" @select="selectCategory" />
+    <div class="pull-indicator" :style="{ height: `${pullHeight}px` }">
+      <span class="pull-indicator__spinner" :class="{ 'pull-indicator__spinner--spin': refreshing }" />
+      <span>{{ pullLabel }}</span>
+    </div>
 
-    <main>
-      <template v-if="activeCategory === 'epl'">
-        <p v-if="eplPending" class="state state--loading">Loading news...</p>
+    <main class="feed">
+      <p v-if="activeIsLoading" class="state state--loading">Loading news...</p>
 
-        <div v-else-if="eplError" class="state state--error">
-          <p>Failed to load news. Please try again.</p>
-          <button type="button" @click="refreshEpl()">Try again</button>
-        </div>
-
-        <ul v-else class="news-list">
-          <li v-for="item in eplNews" :key="item.link">
-            <NewsCard
-              :title="item.title"
-              :excerpt="item.excerpt"
-              :published-at="item.publishedAt"
-              :link="item.link"
-              :image-url="item.imageUrl"
-              :source="item.source"
-            />
-          </li>
-        </ul>
-      </template>
+      <div v-else-if="activeHasError" class="state state--error">
+        <p>Failed to load news. Please try again.</p>
+        <button type="button" @click="refresh">Try again</button>
+      </div>
 
       <template v-else>
-        <p v-if="activeStatus === 'pending'" class="state state--loading">Loading news...</p>
-
-        <div v-else-if="activeStatus === 'error'" class="state state--error">
-          <p>Failed to load news. Please try again.</p>
-          <button type="button" @click="loadCategory(activeCategory)">Try again</button>
+        <div v-for="entry in feedEntries" :key="entry.item.id" class="feed-entry">
+          <div v-if="entry.showDivider" class="earlier-divider">
+            <span class="earlier-divider__line" />
+            <span class="earlier-divider__label">Earlier</span>
+            <span class="earlier-divider__line" />
+          </div>
+          <NewsCard
+            :id="entry.item.id"
+            :title="entry.item.title"
+            :excerpt="entry.item.excerpt"
+            :published-at="entry.item.published_at"
+            :link="entry.item.link"
+            :image-url="entry.item.imageUrl"
+            :source="entry.item.source"
+            :category-label="activeCategory === 'all' ? CATEGORY_LABELS[entry.item.category] : undefined"
+            :read="isRead(entry.item.id)"
+            :dim-read="dimRead"
+            :expanded="expandedId === entry.item.id"
+            :thumb-size="thumbSize"
+            :clamp-lines="clampLines"
+            @tap="handleCardTap(entry.item.id)"
+          />
         </div>
-
-        <ul v-else class="news-list">
-          <li v-for="item in activeNews" :key="item.link">
-            <NewsCard
-              :title="item.title"
-              :excerpt="item.excerpt"
-              :published-at="item.publishedAt"
-              :link="item.link"
-              :image-url="item.imageUrl"
-              :source="item.source"
-            />
-          </li>
-        </ul>
       </template>
     </main>
+
+    <footer class="footer">
+      <div class="footer__icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-2-700)" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 13l5 5L20 6" />
+        </svg>
+      </div>
+      <div class="footer__heading">That's everything</div>
+      <div class="footer__line">{{ footerLine }}</div>
+      <button type="button" class="footer__button" @click="refresh">Check for new</button>
+    </footer>
   </div>
 </template>
 
 <style>
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-bg);
 }
 
 body {
-  margin: 0;
-  font-family: system-ui, -apple-system, sans-serif;
-  background: #fafafa;
-  color: #111827;
+  font-family: var(--font-body);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .page {
-  max-width: 800px;
+  min-height: 100vh;
+  max-width: 440px;
+  min-width: 0;
   margin: 0 auto;
-  padding: 1.5rem 1rem 3rem;
+  background: var(--color-bg);
+  color: var(--color-text);
+  padding-bottom: 44px;
+  overflow-x: hidden;
 }
 
-.page__header {
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--color-bg);
+  padding: 14px 18px 0;
+}
+
+.header__row {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  margin-bottom: 1.5rem;
+  gap: 12px;
 }
 
-.page__header h1 {
-  font-size: 1.6rem;
+.header__titles {
+  flex: 1;
+  min-width: 0;
+}
+
+.header__title {
   margin: 0;
+  font-family: var(--font-heading);
+  font-size: 23px;
+  line-height: 1.1;
+  letter-spacing: 0.2px;
+  font-weight: normal;
 }
 
-.page__logo {
-  width: 2rem;
-  height: 2rem;
-  flex: 0 0 auto;
-  animation: logo-pulse 2.4s ease-in-out infinite;
+.header__status {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--color-neutral-600);
 }
 
-@keyframes logo-pulse {
-  0%, 100% {
-    transform: scale(1);
-    filter: drop-shadow(0 0 0 rgba(249, 115, 22, 0));
-  }
-  50% {
-    transform: scale(1.12);
-    filter: drop-shadow(0 0 6px rgba(249, 115, 22, 0.55));
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .page__logo {
-    animation: none;
-  }
-}
-
-.news-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.header__button {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border: 1.5px solid var(--color-divider);
+  background: transparent;
+  color: var(--color-text);
+  border-radius: var(--radius-pill);
   display: grid;
-  gap: 1rem;
+  place-items: center;
+  cursor: pointer;
+}
+
+.header__rail {
+  padding: 13px 18px;
+  margin: 0 -18px;
+}
+
+.header__divider {
+  height: 1px;
+  background: var(--color-divider);
+  margin: 0 -18px;
+}
+
+.pull-indicator {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  transition: height 0.18s ease;
+}
+
+.pull-indicator__spinner {
+  width: 17px;
+  height: 17px;
+  border-radius: var(--radius-pill);
+  border: 2.5px solid var(--color-accent-300);
+  border-top-color: var(--color-accent);
+  display: inline-block;
+}
+
+.pull-indicator__spinner--spin {
+  animation: spin 0.8s linear infinite;
+}
+
+.pull-indicator span {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-neutral-600);
+}
+
+.feed {
+  padding: 14px 14px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.earlier-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 6px 4px;
+}
+
+.earlier-divider__line {
+  height: 1px;
+  flex: 1;
+  background: var(--color-divider);
+}
+
+.earlier-divider__label {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-neutral-600);
 }
 
 .state {
   text-align: center;
   padding: 2rem 1rem;
-  color: #4b5563;
+  color: var(--color-neutral-600);
 }
 
 .state--error button {
   margin-top: 0.75rem;
   padding: 0.5rem 1.25rem;
-  border: 1px solid #6b21a8;
-  border-radius: 0.5rem;
-  background: #6b21a8;
-  color: #fff;
+  border: 1.5px solid var(--color-divider);
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
   cursor: pointer;
   font-size: 0.95rem;
 }
 
-.state--error button:hover {
-  background: #581c87;
+.footer {
+  text-align: center;
+  padding: 30px 24px 10px;
+  color: var(--color-neutral-600);
 }
 
-@media (max-width: 480px) {
-  .page {
-    padding: 1rem 0.75rem 2rem;
-  }
+.footer__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-2-200);
+  margin: 0 auto 12px;
+  display: grid;
+  place-items: center;
+}
 
-  .news-list {
-    grid-template-columns: 1fr;
-  }
+.footer__heading {
+  font-family: var(--font-heading);
+  font-size: 17px;
+  color: var(--color-text);
+}
+
+.footer__line {
+  font-size: 13px;
+  margin-top: 5px;
+}
+
+.footer__button {
+  margin-top: 16px;
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--color-divider);
+  background: transparent;
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
 }
 </style>
