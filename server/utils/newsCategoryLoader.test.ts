@@ -43,18 +43,25 @@ describe('loadCategoryNews', () => {
       return [newsItem({ title: 'Article two', link: 'https://example.com/two', source })]
     })
 
-    const news = await loadCategoryNews({
-      label: 'Technology',
-      feedUrls: [
-        { url: 'https://one.example/feed', source: 'Source One' },
-        { url: 'https://two.example/feed', source: 'Source Two' },
-      ],
-    })
+    const news = await loadCategoryNews(
+      {
+        label: 'Technology',
+        feedUrls: [
+          { url: 'https://one.example/feed', source: 'Source One' },
+          { url: 'https://two.example/feed', source: 'Source Two' },
+        ],
+      },
+      'technology',
+    )
 
     expect(fetchNewsFeedXml).toHaveBeenCalledWith('https://one.example/feed')
     expect(fetchNewsFeedXml).toHaveBeenCalledWith('https://two.example/feed')
     expect(news).toHaveLength(2)
-    expect(news.find((item) => item.link === 'https://example.com/one')?.source).toBe('Source One')
+    const one = news.find((item) => item.link === 'https://example.com/one')
+    expect(one?.source).toBe('Source One')
+    expect(one?.id).toBe('https://example.com/one')
+    expect(one?.category).toBe('technology')
+    expect(one?.published_at).toBe('Thu, 30 Jul 2026 12:00:00 +0000')
     expect(news.find((item) => item.link === 'https://example.com/two')?.source).toBe('Source Two')
   })
 
@@ -67,14 +74,17 @@ describe('loadCategoryNews', () => {
       return [newsItem({ title: 'Company announces layoffs', link: 'https://example.com/layoffs', source })]
     })
 
-    const news = await loadCategoryNews({
-      label: 'IT Jobs',
-      feedUrls: [
-        { url: 'https://one.example/feed', source: 'Source One' },
-        { url: 'https://two.example/feed', source: 'Source Two' },
-      ],
-      keywords: ['layoffs'],
-    })
+    const news = await loadCategoryNews(
+      {
+        label: 'IT Jobs',
+        feedUrls: [
+          { url: 'https://one.example/feed', source: 'Source One' },
+          { url: 'https://two.example/feed', source: 'Source Two' },
+        ],
+        keywords: ['layoffs'],
+      },
+      'it-jobs',
+    )
 
     expect(news).toHaveLength(1)
     expect(news[0]?.title).toBe('Company announces layoffs')
@@ -86,13 +96,16 @@ describe('loadCategoryNews', () => {
       .mockResolvedValueOnce('<rss></rss>')
     parseNewsFeedXml.mockReturnValue([newsItem()])
 
-    const news = await loadCategoryNews({
-      label: 'IT Jobs',
-      feedUrls: [
-        { url: 'https://one.example/feed', source: 'Source One' },
-        { url: 'https://two.example/feed', source: 'Source Two' },
-      ],
-    })
+    const news = await loadCategoryNews(
+      {
+        label: 'IT Jobs',
+        feedUrls: [
+          { url: 'https://one.example/feed', source: 'Source One' },
+          { url: 'https://two.example/feed', source: 'Source Two' },
+        ],
+      },
+      'it-jobs',
+    )
 
     expect(news).toHaveLength(1)
   })
@@ -101,13 +114,16 @@ describe('loadCategoryNews', () => {
     fetchNewsFeedXml.mockRejectedValue(new Error('network error'))
 
     await expect(
-      loadCategoryNews({
-        label: 'IT Jobs',
-        feedUrls: [
-          { url: 'https://one.example/feed', source: 'Source One' },
-          { url: 'https://two.example/feed', source: 'Source Two' },
-        ],
-      }),
+      loadCategoryNews(
+        {
+          label: 'IT Jobs',
+          feedUrls: [
+            { url: 'https://one.example/feed', source: 'Source One' },
+            { url: 'https://two.example/feed', source: 'Source Two' },
+          ],
+        },
+        'it-jobs',
+      ),
     ).rejects.toThrow('Failed to load IT Jobs news feed')
   })
 
@@ -123,10 +139,13 @@ describe('loadCategoryNews', () => {
     ])
     fetchArticleImageUrl.mockResolvedValue('https://example.com/article-image.jpg')
 
-    const news = await loadCategoryNews({
-      label: 'Technology',
-      feedUrls: [{ url: 'https://primary.example/feed', source: 'Source' }],
-    })
+    const news = await loadCategoryNews(
+      {
+        label: 'Technology',
+        feedUrls: [{ url: 'https://primary.example/feed', source: 'Source' }],
+      },
+      'technology',
+    )
 
     expect(fetchArticleImageUrl).toHaveBeenCalledTimes(1)
     expect(fetchArticleImageUrl).toHaveBeenCalledWith('https://example.com/no-image')
@@ -155,10 +174,13 @@ describe('loadCategoryNews', () => {
       }),
     ])
 
-    const news = await loadCategoryNews({
-      label: 'Playstation',
-      feedUrls: [{ url: 'https://primary.example/feed', source: 'Push Square' }],
-    })
+    const news = await loadCategoryNews(
+      {
+        label: 'Playstation',
+        feedUrls: [{ url: 'https://primary.example/feed', source: 'Push Square' }],
+      },
+      'playstation',
+    )
 
     expect(news.find((item) => item.link === 'https://example.com/ps5-news')?.imageUrl).toBe(
       '/api/image-proxy?url=https%3A%2F%2Fimages.pushsquare.com%2Fthumb.jpg',

@@ -7,6 +7,7 @@ export interface CategoryTab {
 defineProps<{
   tabs: CategoryTab[]
   activeSlug: string
+  unreadCounts: Record<string, number>
 }>()
 
 const emit = defineEmits<{
@@ -20,11 +21,14 @@ const emit = defineEmits<{
       v-for="tab in tabs"
       :key="tab.slug"
       type="button"
-      class="category-tabs__tab"
-      :class="{ 'category-tabs__tab--active': tab.slug === activeSlug }"
+      class="category-tabs__pill"
+      :class="{ 'category-tabs__pill--active': tab.slug === activeSlug }"
       @click="emit('select', tab.slug)"
     >
-      {{ tab.label }}
+      <span>{{ tab.label }}</span>
+      <span v-if="(unreadCounts[tab.slug] ?? 0) > 0" class="category-tabs__badge">
+        {{ unreadCounts[tab.slug] }}
+      </span>
     </button>
   </nav>
 </template>
@@ -32,29 +36,54 @@ const emit = defineEmits<{
 <style scoped>
 .category-tabs {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
-.category-tabs__tab {
-  padding: 0.5rem 1rem;
-  border: 1px solid #d1d5db;
-  border-radius: 999px;
-  background: #fff;
-  color: #374151;
-  font-size: 0.9rem;
+.category-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.category-tabs__pill {
+  flex: none;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 15px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+  border: 1.5px solid var(--color-divider);
+  background: var(--color-surface);
+  color: var(--color-text);
 }
 
-.category-tabs__tab:hover {
-  border-color: #6b21a8;
+.category-tabs__pill--active {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
-.category-tabs__tab--active {
-  background: #6b21a8;
-  border-color: #6b21a8;
-  color: #fff;
+.category-tabs__badge {
+  font-size: 11.5px;
+  font-weight: 700;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  border-radius: var(--radius-pill);
+  display: grid;
+  place-items: center;
+  background: var(--color-accent-200);
+  color: var(--color-accent-700);
+}
+
+.category-tabs__pill--active .category-tabs__badge {
+  background: rgba(255, 246, 236, 0.26);
+  color: var(--color-on-accent);
 }
 </style>

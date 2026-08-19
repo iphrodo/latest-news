@@ -62,6 +62,11 @@ function normalizePubDate(value: string): string {
   return `${value.slice(0, match.index)} ${offset}`
 }
 
+function toIsoPubDate(value: string): string {
+  const parsed = new Date(normalizePubDate(value))
+  return Number.isNaN(parsed.getTime()) ? value : parsed.toISOString()
+}
+
 export async function fetchNewsFeedXml(feedUrl: string): Promise<string> {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
@@ -135,9 +140,9 @@ export function parseNewsFeedXml(xml: string, sourceName: string): RawNewsItem[]
   const list = Array.isArray(items) ? items : [items]
 
   return list.map((item) => ({
-    title: decodeEntities(stripHtml(String(item.title ?? ''))),
-    excerpt: decodeEntities(stripHtml(String(item.description ?? ''))),
-    publishedAt: normalizePubDate(String(item.pubDate ?? '')),
+    title: stripHtml(decodeEntities(stripHtml(String(item.title ?? '')))),
+    excerpt: stripHtml(decodeEntities(stripHtml(String(item.description ?? '')))),
+    publishedAt: toIsoPubDate(String(item.pubDate ?? '')),
     link: String(item.link ?? ''),
     imageUrl: extractImageUrl(item),
     source: sourceName,

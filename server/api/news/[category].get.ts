@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    return await loadCategoryNews(config)
+    return await loadCategoryNews(config, category!)
   } catch (error) {
     throw createError({
       statusCode: 502,

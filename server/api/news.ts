@@ -5,7 +5,7 @@ export default defineEventHandler(async () => {
   const config = NEWS_CATEGORIES.epl!
 
   try {
-    return await loadCategoryNews(config)
+    return await loadCategoryNews(config, 'epl')
   } catch (error) {
     throw createError({
       statusCode: 502,
